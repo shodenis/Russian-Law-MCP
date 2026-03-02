@@ -67,7 +67,8 @@ COPY data/database.db ./data/database.db
 # Create and use non-root user
 # -------------------------------------------------------------------------------
 
-RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
+RUN addgroup -S nodejs && adduser -S nodejs -G nodejs \
+ && chown -R nodejs:nodejs /app/data
 USER nodejs
 
 # -------------------------------------------------------------------------------
