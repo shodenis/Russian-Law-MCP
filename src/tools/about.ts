@@ -1,44 +1,15 @@
+/**
+ * about — Server metadata, dataset statistics, and provenance.
+ */
+
 import type Database from '@ansvar/mcp-sqlite';
-import { detectCapabilities, readDbMetadata, type Capability, type Tier } from '../capabilities.js';
+import { detectCapabilities, readDbMetadata } from '../capabilities.js';
+import { SERVER_NAME, SERVER_VERSION, REPOSITORY_URL } from '../constants.js';
 
 export interface AboutContext {
   version: string;
   fingerprint: string;
   dbBuilt: string;
-}
-
-export interface AboutResult {
-  server: {
-    name: string;
-    package: string;
-    version: string;
-    suite: string;
-    repository: string;
-  };
-  dataset: {
-    tier: Tier;
-    capabilities: Capability[];
-    fingerprint: string;
-    built: string;
-    jurisdiction: string;
-    content_basis: string;
-    counts: Record<string, number>;
-    freshness: {
-      last_checked: string | null;
-      check_method: string;
-    };
-  };
-  provenance: {
-    sources: string[];
-    license: string;
-    authenticity_note: string;
-  };
-  security: {
-    access_model: string;
-    network_access: boolean;
-    filesystem_access: boolean;
-    arbitrary_execution: boolean;
-  };
 }
 
 function safeCount(db: InstanceType<typeof Database>, sql: string): number {
@@ -50,61 +21,45 @@ function safeCount(db: InstanceType<typeof Database>, sql: string): number {
   }
 }
 
-export function getAbout(
-  db: InstanceType<typeof Database>,
-  context: AboutContext
-): AboutResult {
-  const counts: Record<string, number> = {
-    laws: safeCount(db, 'SELECT COUNT(*) as count FROM laws'),
-    provisions: safeCount(db, 'SELECT COUNT(*) as count FROM provisions'),
-    eu_documents: safeCount(db, 'SELECT COUNT(*) as count FROM eu_documents'),
-    eu_references: safeCount(db, 'SELECT COUNT(*) as count FROM eu_references'),
-    cross_references: safeCount(db, 'SELECT COUNT(*) as count FROM cross_references'),
+export function getAbout(db: InstanceType<typeof Database>, context: AboutContext) {
+  const caps = detectCapabilities(db);
+  const meta = readDbMetadata(db);
+
+  const euRefs = safeCount(db, 'SELECT COUNT(*) as count FROM eu_references');
+
+  const stats: Record<string, number> = {
+    documents: safeCount(db, 'SELECT COUNT(*) as count FROM legal_documents'),
+    provisions: safeCount(db, 'SELECT COUNT(*) as count FROM legal_provisions'),
+    definitions: safeCount(db, 'SELECT COUNT(*) as count FROM definitions'),
   };
 
-  const capabilities = detectCapabilities(db);
-  const metadata = readDbMetadata(db);
+  if (euRefs > 0) {
+    stats.eu_documents = safeCount(db, 'SELECT COUNT(*) as count FROM eu_documents');
+    stats.eu_references = euRefs;
+  }
 
   return {
-    server: {
-      name: 'Russian Law MCP',
-      package: '@ansvar/russian-law-mcp',
-      version: context.version,
-      suite: 'Ansvar Compliance Suite',
-      repository: 'https://github.com/Ansvar-Systems/Russian-Law-MCP',
-    },
-    dataset: {
-      tier: metadata.tier,
-      capabilities: [...capabilities].sort(),
-      fingerprint: context.fingerprint,
-      built: context.dbBuilt,
-      jurisdiction: 'Russia (RU)',
-      content_basis:
-        'Russian federal statute text from pravo.gov.ru. ' +
-        'Not an official legal publication.',
-      counts,
-      freshness: {
-        last_checked: null,
-        check_method: 'Manual review',
+    name: 'Russian Law MCP MCP',
+    version: context.version,
+    jurisdiction: 'RU',
+    description: 'Russian Law MCP MCP — legislation via Model Context Protocol',
+    stats,
+    data_sources: [
+      {
+        name: 'Pravo.gov.ru (Official Internet Portal of Legal Information)',
+        url: 'https://pravo.gov.ru',
+        authority: 'Federal Guard Service',
       },
+    ],
+    freshness: {
+      database_built: context.dbBuilt,
     },
-    provenance: {
-      sources: [
-        'pravo.gov.ru (statutes)',
-        'EUR-Lex (EU cross-references)',
-      ],
-      license:
-        'Apache-2.0 (server code). Russian federal laws are not subject to copyright ' +
-        'per Article 1259 of the Civil Code of the Russian Federation.',
-      authenticity_note:
-        'Statute text is derived from pravo.gov.ru. ' +
-        'Verify against official publications (Официальный интернет-портал правовой информации).',
-    },
-    security: {
-      access_model: 'read-only',
-      network_access: false,
-      filesystem_access: false,
-      arbitrary_execution: false,
+    disclaimer:
+      'This is a research tool, not legal advice. Verify critical citations against official sources.',
+    network: {
+      name: 'Ansvar MCP Network',
+      open_law: 'https://ansvar.eu/open-law',
+      directory: 'https://ansvar.ai/mcp',
     },
   };
 }
