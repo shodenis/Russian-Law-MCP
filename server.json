@@ -6,13 +6,13 @@
     "url": "https://github.com/Ansvar-Systems/Russian-Law-MCP",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "0.1.0",
   "license": "Apache-2.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@ansvar/russian-law-mcp",
-      "version": "1.0.0",
+      "version": "0.1.0",
       "transport": {
         "type": "stdio"
       }
@@ -20,7 +20,7 @@
     {
       "registryType": "npm",
       "identifier": "@ansvar/russian-law-mcp",
-      "version": "1.0.0",
+      "version": "0.1.0",
       "transport": {
         "type": "streamable-http",
         "url": "https://russian-law-mcp.vercel.app/mcp"
