@@ -3,8 +3,6 @@
  */
 
 import type Database from '@ansvar/mcp-sqlite';
-import { detectCapabilities, readDbMetadata } from '../capabilities.js';
-import { SERVER_NAME, SERVER_VERSION, REPOSITORY_URL } from '../constants.js';
 
 export interface AboutContext {
   version: string;
@@ -22,8 +20,6 @@ function safeCount(db: InstanceType<typeof Database>, sql: string): number {
 }
 
 export function getAbout(db: InstanceType<typeof Database>, context: AboutContext) {
-  const caps = detectCapabilities(db);
-  const meta = readDbMetadata(db);
 
   const euRefs = safeCount(db, 'SELECT COUNT(*) as count FROM eu_references');
 
