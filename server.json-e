@@ -23,7 +23,7 @@
       "version": "0.1.0",
       "transport": {
         "type": "streamable-http",
-        "url": "https://mcp.ansvar.eu/law-russian-law-mcp/mcp"
+        "url": "https://russian-law-mcp.vercel.app/mcp"
       }
     }
   ]
