@@ -43,6 +43,19 @@ interface ProvisionRow {
   metadata: string | null;
 }
 
+function normalizeProvisionRef(ref: string): string {
+  const trimmed = ref.trim();
+  const pStMatch = trimmed.match(/[пП](?:ункт)?\.?\s*(\d+)\s*[сС]т(?:атья|\.|\s)\s*(\d+(?:\.\d+)?)/);
+  if (pStMatch) return `${pStMatch[2]}:${pStMatch[1]}`;
+  const chStMatch = trimmed.match(/[чЧ](?:асть)?\.?\s*(\d+)\s*[сС]т(?:атья|\.|\s)\s*(\d+(?:\.\d+)?)/);
+  if (chStMatch) return `${chStMatch[2]}:${chStMatch[1]}`;
+  const stMatch = trimmed.match(/[сС]т(?:атья|\.|\s)\s*(\d+(?:\.\d+)?)/);
+  if (stMatch) return stMatch[1];
+  const glMatch = trimmed.match(/[гГ]л(?:ава|\.|\s)\s*(\d+)/);
+  if (glMatch) return `ch:${glMatch[1]}`;
+  return trimmed;
+}
+
 export async function getProvision(
   db: Database,
   input: GetProvisionInput
@@ -51,17 +64,15 @@ export async function getProvision(
     throw new Error('document_id is required');
   }
 
-  // If provision_ref is directly provided, use it
-  let provisionRef = input.provision_ref;
+  let provisionRef = input.provision_ref ? normalizeProvisionRef(input.provision_ref) : undefined;
   if (!provisionRef) {
     if (input.chapter && input.section) {
-      provisionRef = `${input.chapter}:${input.section}`;
+      provisionRef = `${normalizeProvisionRef(input.chapter)}:${normalizeProvisionRef(input.section)}`;
     } else if (input.section) {
-      provisionRef = input.section;
+      provisionRef = normalizeProvisionRef(input.section);
     }
   }
 
-  // If no specific provision, return all provisions for the document (capped)
   if (!provisionRef) {
     const MAX_ALL_PROVISIONS = 100;
     const all = getAllProvisions(db, input.document_id, MAX_ALL_PROVISIONS + 1);
